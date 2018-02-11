@@ -1,0 +1,103 @@
+import maya.cmds as mc
+
+
+def ikFkSwitch_sameOrient():
+
+    '''This command should be used in the cases where all the controls and joints, including the
+
+    ik control are oriented in the exact same way.'''
+
+    if mc.getAttr("L_armIkFk_CTL.fkIk"):
+
+        # From IK to FK
+
+        mc.delete(mc.orientConstraint("L_armIk01_JNT", "L_armFk01_CTL"))
+
+        mc.delete(mc.orientConstraint("L_armIk02_JNT", "L_armFk02_CTL"))
+
+        mc.delete(mc.orientConstraint("L_handIk01_JNT", "L_handFk01_CTL"))
+
+        mc.setAttr("L_armIkFk_CTL.fkIk", 0)
+
+    else:
+
+        # From FK to IK
+
+        mc.delete(mc.parentConstraint("L_handFk01_JNT", "L_armIk_CTL"))
+
+        arm01Vec = [mc.xform("L_armFk02_JNT", t=1, ws=1, q=1)[i] - mc.xform("L_armFk01_JNT", t=1, ws=1, q=1)[i] for i in range(3)]
+
+        arm02Vec = [mc.xform("L_armFk02_JNT", t=1, ws=1, q=1)[i] - mc.xform("L_armFk03_JNT", t=1, ws=1, q=1)[i] for i in range(3)]
+
+        mc.xform("L_armPv_CTL", t=[mc.xform("L_armFk02_JNT", t=1, q=1, ws=1)[i] + arm01Vec[i] * .75 + arm02Vec[i] * .75 for i in range(3)], ws=1)
+
+        mc.setAttr("L_armIkFk_CTL.fkIk", 1)
+
+
+
+
+
+def ikFkSwitch_ikWorld():
+
+    '''This command should be uses in the cases where everything except the ik control is oriented
+
+    in the same way. Usually it is used when we want the ik control to be oriented in world space.
+
+
+
+    This function relies on the "L_hand01IkOfs_LOC" locator, which is a dummy object underneath 
+
+    "L_handFk01_JNT", but is oriented in the same way as L_armIk_CTL.
+
+
+
+    Additionally, if we want to have the "L_handIk01_JNT", oriented the same way as the IK control,
+
+    we run this piece of code to apply an additional transformation to the "L_hand01IkOfs_LOC" in
+
+    order to adjust for that difference.
+
+
+
+    ikRot = [-1 * mc.xform("L_handIk01_JNT", ro=1 ,q=1)[i] for i in range(3)]
+
+    mc.xform("L_hand01IkOfs_LOC", ro=ikRot, r=1)
+
+    '''
+
+    if mc.getAttr("L_armIkFk_CTL.fkIk"):
+
+        # From IK to FK
+
+        mc.delete(mc.orientConstraint("L_armIk01_JNT", "L_armFk01_CTL"))
+
+        mc.delete(mc.orientConstraint("L_armIk02_JNT", "L_armFk02_CTL"))
+
+        mc.delete(mc.orientConstraint("L_handIk01_JNT", "L_handFk01_CTL"))
+
+
+
+        mc.setAttr("L_armIkFk_CTL.fkIk", 0)
+
+    else:
+
+        # From FK to IK
+
+        mc.delete(mc.parentConstraint("L_hand01IkOfs_LOC", "L_armIk_CTL"))
+
+
+
+        arm01Vec = [mc.xform("L_armFk02_JNT", t=1, ws=1, q=1)[i] - mc.xform("L_armFk01_JNT", t=1, ws=1, q=1)[i] for i in range(3)]
+
+        arm02Vec = [mc.xform("L_armFk02_JNT", t=1, ws=1, q=1)[i] - mc.xform("L_armFk03_JNT", t=1, ws=1, q=1)[i] for i in range(3)]
+
+
+
+        mc.xform("L_armPv_CTL", t=[mc.xform("L_armFk02_JNT", t=1, q=1, ws=1)[i] + arm01Vec[i] * .75 + arm02Vec[i] * .75 for i in range(3)], ws=1)
+
+
+
+        mc.setAttr("L_armIkFk_CTL.fkIk", 1)
+        
+        
+ikFkSwitch_sameOrient()
